@@ -4,22 +4,24 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/Kaydarkey/lab-9-simple-web-server--docker-image.git'
         DOCKER_IMAGE = 'flask-app'
-        REGISTRY = 'kaydar'  
+        REGISTRY = 'kaydar'
     }
 
     stages {
         stage('Source') {
             steps {
-                echo 'Cloning the repository...'
+                echo '📥 Cloning the repository...'
                 git url: env.REPO_URL, branch: 'main'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Installing dependencies...'
+                echo '📦 Installing dependencies...'
                 sh '''
                 if [ -f requirements.txt ]; then
+                    python3 -m venv venv
+                    source venv/bin/activate
                     pip install -r requirements.txt
                 else
                     echo "⚠️ requirements.txt not found. Skipping dependency installation."
@@ -30,9 +32,10 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
+                echo '🛠 Running tests...'
                 sh '''
                 if [ -d tests ]; then
+                    source venv/bin/activate
                     pytest tests/
                 else
                     echo "⚠️ No tests directory found. Skipping tests."
@@ -43,13 +46,15 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo 'Building and deploying Docker image...'
-                sh 'docker build -t $DOCKER_IMAGE .'  
-                sh 'docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest'
+                echo '🚀 Building and deploying Docker image...'
+                sh '''
+                docker build -t $DOCKER_IMAGE .
+                docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
+                '''
 
                 script {
                     withDockerRegistry([credentialsId: 'docker-hub-credentials', toolName: 'docker']) {
-                        sh 'docker push $REGISTRY/$DOCKER_IMAGE:latest'
+                        sh 'docker push $REGISTRY/$DOCKER_IMAGE:latest || echo "❌ Docker push failed!"'
                     }
                 }
             }
@@ -57,7 +62,7 @@ pipeline {
 
         stage('Monitor') {
             steps {
-                echo 'Monitoring application health...'
+                echo '🔍 Monitoring application health...'
                 sh '''
                 if curl -s http://localhost:5000/health; then
                     echo "✅ Application is healthy."
