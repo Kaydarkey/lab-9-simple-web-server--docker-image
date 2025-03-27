@@ -19,12 +19,13 @@ pipeline {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
+                    set -e  # Exit on error
                     sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
+                    
                     if [ -f requirements.txt ]; then
-                        sudo python3 -m venv venv
-                        . venv/bin/activate  # Use . instead of source for POSIX compliance
-                        sudo pip install --upgrade pip
-                        sudo pip install -r requirements.txt
+                        sudo python3 -m venv venv  # Create virtual environment
+                        sudo venv/bin/python -m pip install --upgrade pip  # Upgrade pip
+                        sudo venv/bin/python -m pip install -r requirements.txt  # Install dependencies
                     else
                         echo "⚠️ requirements.txt not found. Skipping dependency installation."
                     fi
@@ -36,9 +37,9 @@ pipeline {
             steps {
                 echo '🧪 Running tests...'
                 sh '''
+                    set -e
                     if [ -d tests ]; then
-                        . venv/bin/activate  # Use . instead of source
-                        pytest tests/
+                        venv/bin/python -m pytest tests/
                     else
                         echo "⚠️ No tests directory found. Skipping tests."
                     fi
@@ -50,6 +51,7 @@ pipeline {
             steps {
                 echo '🚀 Building and deploying Docker image...'
                 sh '''
+                    set -e
                     docker build -t $DOCKER_IMAGE .
                     docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
                 '''
