@@ -22,7 +22,7 @@ pipeline {
                     sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
                     if [ -f requirements.txt ]; then
                         sudo python3 -m venv venv
-                        source venv/bin/activate
+                        . venv/bin/activate  # Use . instead of source for POSIX compliance
                         sudo pip install --upgrade pip
                         sudo pip install -r requirements.txt
                     else
@@ -37,7 +37,7 @@ pipeline {
                 echo '🧪 Running tests...'
                 sh '''
                     if [ -d tests ]; then
-                        source venv/bin/activate
+                        . venv/bin/activate  # Use . instead of source
                         pytest tests/
                     else
                         echo "⚠️ No tests directory found. Skipping tests."
