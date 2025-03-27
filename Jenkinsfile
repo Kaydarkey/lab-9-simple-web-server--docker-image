@@ -22,7 +22,7 @@ pipeline {
                     sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
                     if [ -f requirements.txt ]; then
                         sudo python3 -m venv venv
-                        sudo source venv/bin/activate
+                        source venv/bin/activate
                         sudo pip install --upgrade pip
                         sudo pip install -r requirements.txt
                     else
