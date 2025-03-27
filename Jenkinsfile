@@ -4,7 +4,7 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/Kaydarkey/lab-9-simple-web-server--docker-image.git'
         DOCKER_IMAGE = 'flask-app'
-        REGISTRY = 'kaydar'  
+        REGISTRY = 'kaydar'
     }
 
     stages {
@@ -19,10 +19,11 @@ pipeline {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
+                sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
                 if [ -f requirements.txt ]; then
                     python3 -m venv venv
-                    . venv/bin/activate  # Using . instead of source for sh compatibility
-                    pip install -r requirements.txt
+                    . venv/bin/activate  # Use . instead of source for compatibility
+                    pip install --break-system-packages -r requirements.txt  # Bypass managed env restrictions
                 else
                     echo "⚠️ requirements.txt not found. Skipping dependency installation."
                 fi
@@ -35,6 +36,7 @@ pipeline {
                 echo '🧪 Running tests...'
                 sh '''
                 if [ -d tests ]; then
+                    . venv/bin/activate
                     pytest tests/
                 else
                     echo "⚠️ No tests directory found. Skipping tests."
@@ -46,9 +48,11 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo '🚀 Building and deploying Docker image...'
-                sh 'docker build -t $DOCKER_IMAGE .'  
-                sh 'docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest'
-
+                sh '''
+                docker --version  # Check if Docker is installed
+                docker build -t $DOCKER_IMAGE .
+                docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
+                '''
                 script {
                     withDockerRegistry([credentialsId: 'docker-hub-credentials', toolName: 'docker']) {
                         sh 'docker push $REGISTRY/$DOCKER_IMAGE:latest'
