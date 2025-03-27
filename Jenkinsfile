@@ -23,8 +23,8 @@ pipeline {
                 if [ -f requirements.txt ]; then
                     sudo python3 -m venv venv
                     sudo chmod +x venv/bin/pip  # Ensure pip is executable
-                    venv/bin/pip install --upgrade pip
-                    venv/bin/pip install -r requirements.txt
+                    sudo venv/bin/pip install --upgrade pip
+                    sudo venv/bin/pip install -r requirements.txt
                 else
                     echo "⚠️ requirements.txt not found. Skipping dependency installation."
                 fi
@@ -37,7 +37,7 @@ pipeline {
                 echo '🧪 Running tests...'
                 sh '''
                 if [ -d tests ]; then
-                    venv/bin/pytest tests/
+                    sudo venv/bin/pytest tests/
                 else
                     echo "⚠️ No tests directory found. Skipping tests."
                 fi
