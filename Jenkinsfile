@@ -19,11 +19,11 @@ pipeline {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
-                sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
+                apt-get update && apt-get install -y python3-venv  # Ensure python3-venv is installed
                 if [ -f requirements.txt ]; then
                     python3 -m venv venv
-                    . venv/bin/activate  # Use . instead of source for compatibility
-                    pip install --break-system-packages -r requirements.txt  # Bypass managed env restrictions
+                    venv/bin/pip install --upgrade pip
+                    venv/bin/pip install -r requirements.txt
                 else
                     echo "⚠️ requirements.txt not found. Skipping dependency installation."
                 fi
@@ -36,8 +36,7 @@ pipeline {
                 echo '🧪 Running tests...'
                 sh '''
                 if [ -d tests ]; then
-                    . venv/bin/activate
-                    pytest tests/
+                    venv/bin/pytest tests/
                 else
                     echo "⚠️ No tests directory found. Skipping tests."
                 fi
@@ -49,7 +48,7 @@ pipeline {
             steps {
                 echo '🚀 Building and deploying Docker image...'
                 sh '''
-                docker --version  # Check if Docker is installed
+                docker --version || echo "❌ Docker is not installed!"
                 docker build -t $DOCKER_IMAGE .
                 docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
                 '''
@@ -65,11 +64,7 @@ pipeline {
             steps {
                 echo '📊 Monitoring application health...'
                 sh '''
-                if curl -s http://localhost:5000/health; then
-                    echo "✅ Application is healthy."
-                else
-                    echo "❌ Health check failed!"
-                fi
+                curl -s http://localhost:5000/health && echo "✅ Application is healthy." || echo "❌ Health check failed!"
                 '''
             }
         }
