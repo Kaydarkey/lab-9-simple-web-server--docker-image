@@ -49,6 +49,7 @@ pipeline {
             steps {
                 echo '🚀 Building and deploying Docker image...'
                 sh '''
+                docker --version
                 if ! command -v docker &> /dev/null; then
                     echo "❌ Docker is not installed! Install it and ensure Jenkins has access."
                     exit 1
