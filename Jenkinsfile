@@ -19,15 +19,15 @@ pipeline {
             steps {
                 echo '📦 Installing dependencies...'
                 sh '''
-                sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
-                if [ -f requirements.txt ]; then
-                    sudo python3 -m venv venv
-                    sudo chmod +x venv/bin/pip  # Ensure pip is executable
-                    sudo venv/bin/pip install --upgrade pip
-                    sudo venv/bin/pip install -r requirements.txt
-                else
-                    echo "⚠️ requirements.txt not found. Skipping dependency installation."
-                fi
+                    sudo apt-get update && sudo apt-get install -y python3-venv  # Ensure python3-venv is installed
+                    if [ -f requirements.txt ]; then
+                        sudo python3 -m venv venv
+                        sudo source venv/bin/activate
+                        sudo pip install --upgrade pip
+                        sudo pip install -r requirements.txt
+                    else
+                        echo "⚠️ requirements.txt not found. Skipping dependency installation."
+                    fi
                 '''
             }
         }
@@ -36,11 +36,12 @@ pipeline {
             steps {
                 echo '🧪 Running tests...'
                 sh '''
-                if [ -d tests ]; then
-                    sudo venv/bin/pytest tests/
-                else
-                    echo "⚠️ No tests directory found. Skipping tests."
-                fi
+                    if [ -d tests ]; then
+                        source venv/bin/activate
+                        pytest tests/
+                    else
+                        echo "⚠️ No tests directory found. Skipping tests."
+                    fi
                 '''
             }
         }
@@ -49,19 +50,12 @@ pipeline {
             steps {
                 echo '🚀 Building and deploying Docker image...'
                 sh '''
-                docker --version
-                if ! command -v docker &> /dev/null; then
-                    echo "❌ Docker is not installed! Install it and ensure Jenkins has access."
-                    exit 1
-                fi
-                sudo systemctl start docker || echo "⚠️ Docker was not running, attempting to start."
-                
-                docker build -t $DOCKER_IMAGE .
-                docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
+                    docker build -t $DOCKER_IMAGE .
+                    docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
                 '''
                 script {
                     withDockerRegistry([credentialsId: 'docker-hub-credentials', toolName: 'docker']) {
-                        sh 'docker push $REGISTRY/$DOCKER_IMAGE:latest'
+                        sh "docker push ${env.REGISTRY}/${env.DOCKER_IMAGE}:latest"
                     }
                 }
             }
@@ -71,7 +65,7 @@ pipeline {
             steps {
                 echo '📊 Monitoring application health...'
                 sh '''
-                curl -s http://localhost:5000/health && echo "✅ Application is healthy." || echo "❌ Health check failed!"
+                    curl -s http://localhost:5000/health && echo "✅ Application is healthy." || echo "❌ Health check failed!"
                 '''
             }
         }
