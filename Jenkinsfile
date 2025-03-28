@@ -56,7 +56,7 @@ pipeline {
                     docker tag $DOCKER_IMAGE $REGISTRY/$DOCKER_IMAGE:latest
                 '''
                 script {
-                    withDockerRegistry([credentialsId: '92d5613f-350a-4f8c-bcc0-0584b51cbe99', toolName: 'docker']) {
+                    withDockerRegistry([credentialsId: 'docker_jenkins', toolName: 'docker']) {
                         sh "docker push ${env.REGISTRY}/${env.DOCKER_IMAGE}:latest"
                     }
                 }
